@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cadence – Meeting-to-execution agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#FAF8F3;--sf:#FFFFFF;--ink:#1B1A17;--mu:#6F695D;--ln:#E6E1D5;--ac:#0F6B5C;--acs:#DCEDE8;--wn:#B5541A;--wns:#F7E4D6;--dg:#B3261E;--dgs:#F8DEDB;--hero:#12332D;--box:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#13120F;--sf:#1C1B17;--ink:#EDEAE0;--mu:#9A9486;--ln:#2E2C25;--ac:#4FC3A9;--acs:#17342D;--wn:#E59A66;--wns:#3A281B;--dg:#F0857D;--dgs:#3C1D1A;--hero:#0C1F1B}}
+:root[data-theme=dark]{--bg:#13120F;--sf:#1C1B17;--ink:#EDEAE0;--mu:#9A9486;--ln:#2E2C25;--ac:#4FC3A9;--acs:#17342D;--wn:#E59A66;--wns:#3A281B;--dg:#F0857D;--dgs:#3C1D1A;--hero:#0C1F1B}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 "Instrument Sans",system-ui,sans-serif}
+button,select,textarea,input{font:inherit;color:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}
+:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.w{max-width:1120px;margin:0 auto;padding:0 22px}
+.nav{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln)}
+.nb{display:flex;align-items:center;gap:18px;height:64px}
+.logo{display:flex;gap:9px;align-items:center;font-weight:700;font-size:18px}.logo i{width:28px;height:28px;border-radius:8px;background:var(--ac);color:var(--sf);display:grid;place-items:center}
+.links{display:flex;gap:4px;margin-left:12px}.links a{padding:8px 12px;border-radius:10px;color:var(--mu);font-weight:500}.links a:hover{color:var(--ink);background:var(--acs)}
+.nr{margin-left:auto;display:flex;gap:8px;align-items:center}
+.btn,.ib{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--ln);background:var(--sf);border-radius:10px;padding:8px 13px;font-weight:500;position:relative}
+.btn:hover,.ib:hover{border-color:var(--mu)}
+.pri{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}[data-theme=dark] .pri{color:#07201A}.pri:hover{filter:brightness(1.1);border-color:var(--ac)}.pri[disabled]{opacity:.45;cursor:not-allowed}
+.big{padding:13px 22px;border-radius:12px;font-size:16px}
+.dot{position:absolute;top:-5px;right:-5px;background:var(--dg);color:#fff;border-radius:9px;font-size:10px;padding:0 5px}
+#bMenu{display:none}
+.hero{background:var(--hero);color:#F2EFE6;padding:72px 0 80px}
+.hg{display:grid;grid-template-columns:1.15fr .85fr;gap:44px;align-items:center}
+h1{font-size:clamp(34px,5vw,58px);line-height:1.04;letter-spacing:-.03em;margin:0 0 18px;font-weight:600}
+.hero p{font-size:18px;color:#B9C9C3;max-width:520px;margin:0 0 26px}
+.hero .btn{background:transparent;color:#F2EFE6;border-color:#4C6B64}.hero .pri{background:#7FE0C8;color:#07201A;border-color:#7FE0C8}
+.demo{background:var(--sf);color:var(--ink);border-radius:18px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+section{padding:72px 0}h2.s{font-size:clamp(26px,3.4vw,38px);letter-spacing:-.02em;line-height:1.15;margin:0 0 10px}
+.lead{color:var(--mu);max-width:620px;margin:0 0 34px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;counter-reset:s}
+.st{border-top:2px solid var(--ac);padding-top:12px;counter-increment:s}.st:before{content:counter(s);font-weight:700;color:var(--ac);font-size:22px}.st b{display:block}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.card{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:20px}
+.card h3{margin:8px 0 4px;font-size:16px}.card p{margin:0;color:var(--mu);font-size:14px}.ico{width:36px;height:36px;border-radius:10px;background:var(--acs);color:var(--ac);display:grid;place-items:center}
+.wsb{background:var(--sf);border-block:1px solid var(--ln)}
+.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--ln);margin:18px 0}
+.tabs button{border:0;background:none;padding:10px 14px;color:var(--mu);font-weight:500;border-bottom:2px solid transparent;white-space:nowrap}.tabs button.on{color:var(--ink);border-color:var(--ac)}
+.tabs b{background:var(--dg);color:#fff;border-radius:9px;font-size:11px;padding:0 6px;margin-left:5px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+.row{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--ln);align-items:flex-start}.row:first-child{border-top:0}.grow{flex:1;min-width:0}.mu{color:var(--mu)}
+.tag{display:inline-block;border-radius:8px;padding:1px 8px;font-size:12px;font-weight:600;background:var(--acs);color:var(--ac)}.tag.w{background:var(--wns);color:var(--wn)}.tag.d{background:var(--dgs);color:var(--dg)}.tag.n{background:var(--bg);color:var(--mu)}
+textarea,input[type=text],select{width:100%;border:1px solid var(--ln);background:var(--bg);border-radius:12px;padding:10px 12px}textarea{min-height:170px;resize:vertical}
+.bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center}
+.conf{border:1px solid var(--wn);background:var(--wns);border-radius:12px;padding:10px 12px;margin-top:8px}.conf.res{opacity:.55}
+.q{background:var(--bg);border-left:3px solid var(--ac);padding:6px 10px;border-radius:6px;margin-top:6px;font-size:13px}
+.sp{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--acs);color:var(--ac);font-weight:700;font-size:12px;flex:none}
+.meter{height:8px;background:var(--bg);border-radius:6px;flex:1;overflow:hidden}.meter i{display:block;height:100%;background:var(--ac)}
+.sup{text-decoration:line-through;opacity:.55}.rec{background:var(--dgs);color:var(--dg)}
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:50;place-items:center}.scrim.on{display:grid}
+.modal{background:var(--sf);border-radius:18px;padding:22px;width:min(580px,92vw);max-height:84vh;overflow:auto}
+.drawer{position:fixed;top:0;bottom:0;right:0;width:min(400px,100vw);background:var(--sf);border-left:1px solid var(--ln);z-index:45;display:none;flex-direction:column;gap:10px;padding:16px}.drawer.on{display:flex}
+.msgs{flex:1;overflow:auto;display:flex;flex-direction:column;gap:8px}.m{padding:9px 12px;border-radius:12px;max-width:90%;white-space:pre-line}.m.u{background:var(--ac);color:#fff;align-self:flex-end}.m.a{background:var(--bg)}
+.pop{position:absolute;right:0;top:46px;width:320px;display:none}.pop.on{display:block}
+details{border-bottom:1px solid var(--ln);padding:14px 0}summary{font-weight:600;cursor:pointer}details p{color:var(--mu);margin:8px 0 0}
+footer{padding:34px 0;color:var(--mu);font-size:13px}
+#toast{position:fixed;left:50%;bottom:calc(22px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;display:none;z-index:60}
+.empty{padding:22px;text-align:center;color:var(--mu)}
+@media(max-width:900px){.hg{grid-template-columns:1fr}.links{display:none;position:absolute;top:64px;left:0;right:0;background:var(--bg);flex-direction:column;padding:10px 22px;border-bottom:1px solid var(--ln);margin:0}.links.open{display:flex}#bMenu{display:inline-flex}.nr .cta{display:none}section{padding:52px 0}}
+</style>
+</head>
+<body>
+<header class="nav"><div class="w nb">
+<a class="logo" href="#home"><i><svg viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M4 12h4l3-7 3 14 3-7h3"/></svg></i>Cadence</a>
+<nav class="links" id="links" aria-label="Main"><a href="#home">Home</a><a href="#how">How it works</a><a href="#features">Features</a><a href="#workspace">Try it</a><a href="#faq">FAQ</a></nav>
+<div class="nr">
+<button class="ib" id="bK" title="Search and quick actions (Ctrl+K)"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg></button>
+<select class="ib" id="lang" aria-label="Translate" style="width:auto"><option value="en">English</option><option value="hi">हिन्दी</option><option value="te">తెలుగు</option><option value="es">Español</option></select>
+<span style="position:relative"><button class="ib" id="bBell" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15zM10 21h4"/></svg><span class="dot" id="bellN"></span></button><div class="card pop" id="pop"></div></span>
+<button class="ib" id="bTheme" aria-label="Dark mode"><svg viewBox="0 0 24 24" id="themeIc"></svg></button>
+<a class="btn pri cta" href="#workspace">Open workspace</a>
+<button class="ib" id="bMenu" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+</div></div></header>
+
+<div id="home" class="hero"><div class="w hg"><div>
+<h1>Decisions made in meetings shouldn’t get lost.</h1>
+<p>Cadence turns every meeting into confirmed tasks, remembers what your team decided before, and warns you when a new decision contradicts an old one.</p>
+<div class="bar"><button class="btn pri big" data-do="tryNew">Try the sample meeting</button><a class="btn big" href="#how">See how it works</a></div></div>
+<div class="demo"><span class="tag d">Conflict found</span>
+<p style="margin:10px 0 4px"><b>New, today:</b> “We decided to launch on March 14.”</p>
+<p style="margin:0 0 10px" class="mu"><b>Earlier, Roadmap planning, Jan 28:</b> “Launch on April 2.”</p>
+<div class="bar" style="margin:0"><span class="tag">Priya owns this</span><span class="tag w">Needs your call before posting</span></div></div></div></div>
+
+<section id="how"><div class="w"><h2 class="s">From meeting to done, in five steps</h2><p class="lead">New here? This is the whole flow. Nothing is posted anywhere until you approve it.</p>
+<div class="steps"><div class="st"><b>Add the transcript</b><span class="mu">Paste it, or speak it. Each line starts with the speaker’s name.</span></div><div class="st"><b>Extract</b><span class="mu">Cadence finds decisions, action items, owners and deadlines.</span></div><div class="st"><b>Check memory</b><span class="mu">New items are compared with past meetings to catch contradictions.</span></div><div class="st"><b>You confirm</b><span class="mu">Edit owners and dates, then approve.</span></div><div class="st"><b>Post and remind</b><span class="mu">Tasks go to your tracker. Reminders and weekly digests follow.</span></div></div></div></section>
+
+<section id="features" style="padding-top:0"><div class="w"><h2 class="s">Built to remember, not just summarize</h2><p class="lead">Every feature below works in the workspace further down this page.</p>
+<div class="fg" id="fg"></div></div></section>
+
+<section id="workspace" class="wsb"><div class="w"><h2 class="s">Try it: your workspace</h2><p class="lead">Start with the “Start here” tab. It walks you through each step.</p>
+<div class="tools"><button class="ib" id="bHist"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7M3 4v5h5M12 7v5l3 2"/></svg>View history</button><button class="ib" id="bAsk"><svg viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/></svg>Ask AI</button><button class="ib" id="bListen"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10zM17 9a4 4 0 0 1 0 6"/></svg>Listen to this tab</button><button class="ib" data-do="minutes">Copy meeting minutes</button></div>
+<div class="tabs" id="tabs" role="tablist"></div><div id="ws"></div></div></section>
+
+<section id="faq"><div class="w" style="max-width:760px"><h2 class="s">Questions beginners ask</h2>
+<details><summary>Does Cadence post anything without asking me?</summary><p>No. Every item goes through a confirmation step where you can edit the owner, the deadline and the wording first.</p></details>
+<details><summary>What is a conflict?</summary><p>A new decision that contradicts one saved from an earlier meeting, such as a different launch date or database. You choose which one to keep.</p></details>
+<details><summary>Is this connected to a real tracker?</summary><p>This page is a demo. The final build connects to Jira, Linear or Asana through their APIs.</p></details>
+<details><summary>Can I use my voice or another language?</summary><p>Yes. Use the mic button to dictate, the language menu to translate labels, and Listen to hear results read aloud.</p></details></div></section>
+<footer><div class="w">Cadence · Meeting-to-execution agent · Hackathon prototype</div></footer>
+
+<div class="drawer" id="ask"><div style="display:flex"><b style="flex:1">Ask AI assistant</b><button class="ib" id="askX">Close</button></div><div class="msgs" id="msgs"></div><div class="mu" style="font-size:12px">Try “what’s due?”, “any conflicts?”, “who owns pricing?”</div><div style="display:flex;gap:6px"><input type="text" id="q" placeholder="Ask about decisions or deadlines"><button class="ib" id="qMic" title="Voice input"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button><button class="ib pri" id="qGo">Send</button></div></div>
+<div class="drawer" id="hist"><div style="display:flex"><b style="flex:1">History</b><button class="ib" id="histX">Close</button></div><div class="msgs" id="histL"></div></div>
+<div class="scrim" id="scrim"><div class="modal" id="modal"></div></div><div id="toast" role="status"></div>
+
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const L={en:{start:"Start here",tr:"Transcript",de:"Decisions",ta:"Tasks",co:"Conflicts",di:"Digests",br:"Briefing",dec:"Decision",act:"Action item",own:"Owner",due:"Due",sum:(d,a,c)=>`Found ${d} decisions, ${a} action items and ${c} flags against earlier decisions.`},
+hi:{start:"यहाँ से शुरू करें",tr:"ट्रांसक्रिप्ट",de:"निर्णय",ta:"कार्य",co:"टकराव",di:"डाइजेस्ट",br:"ब्रीफिंग",dec:"निर्णय",act:"कार्य आइटम",own:"ज़िम्मेदार",due:"तारीख",sum:(d,a,c)=>`${d} निर्णय, ${a} कार्य आइटम और पिछले निर्णयों से ${c} टकराव मिले।`},
+te:{start:"ఇక్కడ ప్రారంభించండి",tr:"ట్రాన్స్‌క్రిప్ట్",de:"నిర్ణయాలు",ta:"పనులు",co:"వైరుధ్యాలు",di:"డైజెస్ట్",br:"బ్రీఫింగ్",dec:"నిర్ణయం",act:"చర్య అంశం",own:"బాధ్యుడు",due:"గడువు",sum:(d,a,c)=>`${d} నిర్ణయాలు, ${a} చర్య అంశాలు, మునుపటి నిర్ణయాలతో ${c} వైరుధ్యాలు కనుగొనబడ్డాయి.`},
+es:{start:"Empieza aquí",tr:"Transcripción",de:"Decisiones",ta:"Tareas",co:"Conflictos",di:"Resúmenes",br:"Informe previo",dec:"Decisión",act:"Tarea",own:"Responsable",due:"Fecha",sum:(d,a,c)=>`Se encontraron ${d} decisiones, ${a} tareas y ${c} alertas con decisiones anteriores.`}};
+const LC={en:"en-IN",hi:"hi-IN",te:"te-IN",es:"es-ES"};
+let lang="en",tab="start",att=1,theme="light";
+const S={mem:[
+{id:5,t:"Slack is the notification channel",m:"Roadmap planning",d:"Jan 28",o:"Ravi",tp:"",v:"",stale:1,q:"Ravi: Let’s keep alerts in Slack."},
+{id:4,t:"Pricing is $19 per seat",m:"Pricing review",d:"Jan 20",o:"Sana",tp:"pricing",v:"$19",q:"Sana: Pricing is $19 per seat for launch."},
+{id:3,t:"Launch on April 2",m:"Roadmap planning",d:"Jan 28",o:"Priya",tp:"launch",v:"april 2",q:"Priya: We decided to launch on April 2."},
+{id:2,t:"Use PostgreSQL as the primary database",m:"Architecture sync",d:"Jan 12",o:"Arjun",tp:"database",v:"postgresql",q:"Arjun: Postgres it is, after the load test."},
+{id:1,t:"Use MySQL as the database",m:"Kickoff",d:"Dec 5",o:"Arjun",tp:"database",v:"mysql",sup:1,q:"Arjun: Let’s start with MySQL."}],
+tasks:[{t:"Draft API spec for ingestion",o:"Arjun",due:"Feb 26",s:"open",tk:"LIN-12"},{t:"Collect board feedback on pricing",o:"Sana",due:"Feb 24",s:"open",tk:"LIN-14"},{t:"Review speaker attribution accuracy",o:"Ravi",due:"Feb 22",s:"done",tk:"LIN-9"}],
+mt:3,cf:[],items:[],res:0,tx:"",pr:{},notes:[{t:"“Collect board feedback on pricing” is due in 3 days",r:0}],hist:[{t:"Workspace opened",w:"Now"}],ev:{},dg:"Arjun",bt:"database",trk:"Linear"};
+const log=t=>S.hist.unshift({t,w:new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})});
+function toast(m){const t=$("#toast");t.textContent=m;t.style.display="block";clearTimeout(toast.h);toast.h=setTimeout(()=>t.style.display="none",2600)}
+function setTheme(x){theme=x;document.documentElement.dataset.theme=x;try{localStorage.setItem("th",x)}catch(e){}$("#themeIc").innerHTML=x==="dark"?'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>':'<path d="M20 14A8 8 0 1 1 10 4a6.5 6.5 0 0 0 10 10z"/>'}
+function speak(x){if(!("speechSynthesis" in window))return toast("Listening isn’t supported in this browser.");speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(x.slice(0,1200));u.lang=LC[lang];speechSynthesis.speak(u);toast("Reading aloud…")}
+function mic(cb,b){const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(!R)return toast("Voice input needs Chrome, Edge or Safari.");try{const r=new R();r.lang=LC[lang];r.onstart=()=>{b.classList.add("rec");toast("Listening… speak now")};r.onend=()=>b.classList.remove("rec");r.onerror=()=>toast("Microphone blocked. Allow access and try again.");r.onresult=e=>cb(e.results[0][0].transcript);r.start()}catch(e){toast("Voice input couldn’t start.")}}
+/* engine */
+const TP=[{k:"launch",re:/launch\w*\s+(?:on\s+)?([A-Z][a-z]+ \d+)/},{k:"database",re:/(postgres\w*|mongodb|mysql)/i},{k:"pricing",re:/\$\d+/}];
+const val=(s,p)=>{const m=s.match(p.re);if(!m)return"";let v=(m[1]||m[0]).toLowerCase();return/^postgres/.test(v)?"postgresql":v};
+function analyze(tx,pass){const o=[];tx.split("\n").forEach(line=>{const m=line.match(/^\s*([A-Z][\w ]{1,20}):\s*(.+)$/);if(!m)return;const sp=m[1].trim();
+ m[2].split(/(?<=[.!?])\s+/).forEach(s=>{s=s.trim();if(s.split(" ").length<4)return;const due=(s.match(/\bby\s+([A-Z][a-z]+ \d+)/)||[])[1],nm=s.match(/^([A-Z][a-z]+) to /),me=/\b(I’ll|I'll|I will)\b/.test(s),q=sp+": "+s;
+  if((due&&(nm||me||/\bwill\b/.test(s)))||(pass>1&&/\b(should|need to)\b/.test(s)&&(nm||me)))o.push({k:"act",t:s.replace(/\.$/,""),o:nm?nm[1]:sp,due:due||"",c:due?.93:.58,q});
+  else if(/\b(decided|let’s|let's|stays|agreed to|we will|we’ll)\b/i.test(s))o.push({k:"dec",t:s.replace(/\.$/,"").replace(/^(We decided to|Let’s|Let's) /i,""),o:sp,due:"",c:/decided/i.test(s)?.95:.72,q})})});
+ return o.map((x,i)=>({...x,id:i,on:1}))}
+function conflicts(it){const c=[];it.forEach(i=>TP.forEach(p=>{const nv=val(i.t,p);if(!nv)return;const old=S.mem.find(m=>m.tp===p.k&&!m.sup);if(!old)return;
+ c.push(old.v!==nv?{id:i.id,tp:p.k,sev:"hard",nw:i.t,old,why:`Changes ${p.k} from “${old.v}” to “${nv}”`}:{id:i.id,tp:p.k,sev:"dup",nw:i.t,old,why:"Repeats a decision already in memory",res:"no change"}) }));return c}
+const SAMPLE=`Priya: Let's lock the launch date today. We decided to launch on March 14.
+Arjun: Agreed on the date. I'll finalize the database migration to MongoDB by Mar 1.
+Sana: I will send the pricing deck to the board by Feb 25. Pricing stays at $29 per seat.
+Ravi: Ravi to set up the Slack reminder bot by Feb 28.
+Sana: We should review the onboarding emails.`;
+const open=()=>S.cf.filter(c=>!c.res&&c.sev==="hard").length;
+function run(p){S.tx=($("#tx")||{}).value??S.tx;if(!S.tx.trim())return toast("Add a transcript first.");S.items=analyze(S.tx,p);S.cf=conflicts(S.items);S.res=1;att=p;S.pr.ext=1;log(`Analyzed transcript (pass ${p}): ${S.items.length} items, ${S.cf.length} flags`);S.cf.filter(c=>c.sev==="hard").forEach(c=>S.notes.unshift({t:`Conflict on ${c.tp}: ${c.why}`,r:0}));tab="tr";render();toast("Extraction complete")}
+function improve(){S.items.forEach(i=>{if(i.k==="act"&&!i.imp){i.t=i.t.replace(/^(I’ll|I'll|I will|\w+ to) /,"").replace(/^./,c=>c.toUpperCase())+" — done when reviewed and linked in the tracker";i.imp=1;i.c=Math.min(.99,i.c+.04)}});log("Improved wording with AI");render();toast("Tasks reworded with clear outcomes")}
+function confirm(){const sel=S.items.filter(i=>i.on),n=open();$("#modal").innerHTML=`<h3 style="margin:0 0 6px">Review before posting</h3><p class="mu" style="margin:0 0 8px">Nothing is sent until you approve. Edit anything below.</p><div class="bar" style="margin:0 0 8px"><span>Post to</span><select id="trk" style="width:auto">${["Linear","Jira","Asana"].map(x=>`<option ${x===S.trk?"selected":""}>${x}</option>`).join("")}</select></div>${n?`<div class="conf">${n} conflict(s) still need a decision. Resolve them in the Conflicts tab for a clean post.</div>`:""}${sel.map(i=>`<div class="row"><span class="tag ${i.k==="dec"?"":"w"}">${L[lang][i.k]}</span><div class="grow">${esc(i.t)}${i.k==="act"?`<div class="bar" style="margin-top:6px"><input type="text" data-eo="${i.id}" value="${esc(i.o)}" aria-label="Owner" style="width:42%"><input type="text" data-ed="${i.id}" value="${esc(i.due)}" placeholder="Add a deadline" aria-label="Deadline" style="width:42%"></div>`:`<div class="mu">${esc(i.o)}</div>`}</div></div>`).join("")}<div class="bar" style="justify-content:flex-end"><button class="ib" data-do="close">Cancel</button><button class="ib pri" data-do="post">Approve and post</button></div>`;$("#scrim").classList.add("on")}
+function post(){S.trk=$("#trk").value;const pre={Linear:"LIN",Jira:"JRA",Asana:"ASA"}[S.trk];let n=S.tasks.length+30;let np=0;
+ S.items.filter(i=>i.on).forEach(i=>{if(i.k==="act")S.tasks.push({t:i.t,o:i.o,due:i.due||"Not set",s:"open",tk:pre+"-"+n++});
+  TP.forEach(p=>{const v=val(i.t,p),cf=S.cf.find(c=>c.id===i.id&&c.tp===p.k);if(v&&(i.k==="dec"||(cf&&cf.sev==="hard"))&&!(cf&&cf.sev==="dup")){S.mem.forEach(m=>{if(m.tp===p.k)m.sup=1});S.mem.unshift({id:++S.mt+10,t:i.t,m:"Today’s meeting",d:"Today",o:i.o,tp:p.k,v,q:i.q});np++}});
+  if(i.k==="dec"&&!TP.some(p=>val(i.t,p)))S.mem.unshift({id:++S.mt+10,t:i.t,m:"Today’s meeting",d:"Today",o:i.o,tp:"",v:"",q:i.q})});
+ S.notes.unshift({t:`Posted to ${S.trk}. Reminders set 1 day before each deadline.`,r:0});log(`Posted items to ${S.trk} after approval`);S.pr.post=1;S.res=0;S.items=[];S.cf=[];$("#scrim").classList.remove("on");tab="ta";render();toast("Posted to "+S.trk)}
+function reply(q){q=q.toLowerCase();const o=S.tasks.filter(t=>t.s==="open");
+ if(/due|deadline|week/.test(q))return o.length?"Open deadlines:\n"+o.map(t=>`• ${t.t} — ${t.o}, ${t.due}`).join("\n"):"No open tasks.";
+ if(/conflict|contradict/.test(q)){const c=S.cf.filter(x=>!x.res);return c.length?c.map(x=>`• ${x.why}`).join("\n"):"No unresolved conflicts."}
+ const w=q.match(/(?:own|who).*?(pricing|launch|database|slack)/);if(w){const m=S.mem.find(m=>!m.sup&&m.t.toLowerCase().includes(w[1]));if(m)return`${m.o} owns “${m.t}” (${m.m}, ${m.d}).`}
+ const h=S.mem.filter(m=>q.split(/\W+/).some(x=>x.length>3&&m.t.toLowerCase().includes(x)));return h.length?h.map(m=>`• ${m.t} (${m.m}, ${m.d})`).join("\n"):"I can answer from meeting memory: deadlines, conflicts, owners or decisions on a topic."}
+function ask(q){if(!q.trim())return;const a=$("#msgs");a.insertAdjacentHTML("beforeend",`<div class="m u">${esc(q)}</div><div class="m a">${esc(reply(q))}</div>`);a.scrollTop=1e9;$("#q").value="";log("Asked AI: "+q)}
+function minutes(){const t=S.items.length?S.items.filter(i=>i.on).map(i=>`- [${L.en[i.k]}] ${i.t} (${i.o}${i.due?", due "+i.due:""})`).join("\n"):S.mem.filter(m=>!m.sup).map(m=>`- ${m.t} (${m.m}, ${m.d})`).join("\n");const x="# Meeting minutes\n"+t;try{navigator.clipboard.writeText(x).then(()=>toast("Minutes copied to clipboard"),()=>toast("Couldn’t copy. Select the text manually."))}catch(e){toast("Couldn’t copy in this browser.")}}
+/* views */
+const av=n=>`<span class="sp">${esc(n[0])}</span>`;
+const FEAT=[["Cross-meeting memory","Every decision is stored with its meeting, owner and original quote.","M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v5l3 2"],["Conflict detection","New decisions are checked against memory and flagged hard or duplicate, with a reason.","M12 4l9 16H3zM12 10v4"],["Evidence and confidence","Each item links to its source line and shows how sure the AI is.","M5 4h14v16H5zM8 9h8M8 13h5"],["Approval before posting","Edit owners and deadlines, then approve. Nothing posts on its own.","M5 12l4 4 10-10"],["Reminders and digests","Reminders before deadlines and a personal weekly digest with workload.","M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z"],["Voice, translate, listen","Dictate, switch language and hear results read aloud.","M12 3a3 3 0 0 1 3 3v5a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3zM5 11a7 7 0 0 0 14 0"]];
+$("#fg").innerHTML=FEAT.map(f=>`<div class="card"><span class="ico"><svg viewBox="0 0 24 24"><path d="${f[2]}"/></svg></span><h3>${f[0]}</h3><p>${f[1]}</p></div>`).join("");
+const TABS=["start","tr","de","ta","co","di","br"];
+const B={
+start(){const P=S.pr,st=[["Load the sample meeting","sample","Fills the transcript box with a short example."],["Extract decisions and tasks","ext","Finds decisions, owners and deadlines."],["Resolve the conflicts","res","Pick the new or earlier decision."],["Approve and post","post","Review, edit and send to your tracker."]],nx=st.findIndex(s=>!P[s[1]]);
+ return`<div class="g2"><div class="card"><h3 style="margin-top:0">Your first run</h3>${st.map((s,i)=>`<div class="row"><span class="tag ${P[s[1]]?"":"n"}">${P[s[1]]?"Done":i+1}</span><div class="grow"><b>${s[0]}</b><div class="mu">${s[2]}</div></div>${i===nx?`<button class="ib pri" data-st="${s[1]}">Do this</button>`:""}</div>`).join("")}</div>
+<div class="card"><h3 style="margin-top:0">Words you’ll see</h3><div class="row"><b>Decision</b><span class="mu">Something the team agreed on.</span></div><div class="row"><b>Action item</b><span class="mu">A task with an owner and a deadline.</span></div><div class="row"><b>Conflict</b><span class="mu">A new decision that contradicts an old one.</span></div><div class="row"><b>Memory</b><span class="mu">Everything decided in past meetings.</span></div></div></div>`},
+tr(){return`<div class="card"><h3 style="margin-top:0">Paste or speak the transcript</h3><div class="mu" style="margin-bottom:8px">One line per speaker, like “Priya: We decided to…”.</div><textarea id="tx" placeholder="Priya: We decided to…">${esc(S.tx)}</textarea><div class="bar"><button class="ib" id="tMic"><svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>Voice input</button><button class="ib" data-do="sample">Load sample</button><span style="flex:1"></span><button class="ib pri" data-do="run">Extract decisions and tasks</button></div></div>${S.res?result():""}`},
+de(){return`<input type="text" id="fd" placeholder="Search decisions" style="margin-bottom:12px"><div class="card" id="dl"></div>`},
+ta(){const w={};S.tasks.filter(t=>t.s==="open").forEach(t=>w[t.o]=(w[t.o]||0)+1);return`<div class="card" style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:560px"><tr class="mu" style="text-align:left"><th>Task</th><th>${L[lang].own}</th><th>${L[lang].due}</th><th>Ticket</th><th></th></tr>${S.tasks.map((t,i)=>`<tr style="border-top:1px solid var(--ln)"><td style="padding:10px 6px">${esc(t.t)}</td><td>${t.o}</td><td>${esc(t.due)}</td><td><span class="tag n">${t.tk}</span></td><td style="white-space:nowrap"><button class="ib" data-tog="${i}">${t.s==="done"?"Reopen":"Mark done"}</button> <button class="ib" data-rem="${i}">Remind me</button></td></tr>`).join("")}</table></div>`},
+co(){return S.cf.length?S.cf.map((c,i)=>`<div class="conf ${c.res?"res":""}" style="margin-bottom:10px"><span class="tag ${c.sev==="hard"?"d":"n"}">${c.sev==="hard"?"Hard conflict":"Duplicate"}</span> <b>${c.tp}</b> ${c.res?`<span class="tag">${c.res}</span>`:""}<p style="margin:6px 0">${esc(c.why)}.<br>New: “${esc(c.nw)}”<br>Earlier (${c.old.m}, ${c.old.d}): “${esc(c.old.t)}”</p>${c.res||c.sev==="dup"?"":`<button class="ib" data-cr="${i}|new">Keep the new one</button> <button class="ib" data-cr="${i}|old">Keep the earlier one</button>`}</div>`).join(""):'<div class="card empty">No conflicts yet. Run the sample meeting from Start here.</div>'},
+di(){const ppl=["Priya","Arjun","Sana","Ravi"],p=S.dg,mine=S.tasks.filter(t=>t.o===p&&t.s==="open"),dm=S.mem.filter(m=>m.o===p&&!m.sup),mx=Math.max(1,...ppl.map(x=>S.tasks.filter(t=>t.o===x&&t.s==="open").length));
+ return`<div class="bar" style="margin:0 0 12px">${ppl.map(x=>`<button class="ib ${x===p?"pri":""}" data-dg="${x}">${x}</button>`).join("")}</div><div class="g2"><div class="card" id="dgc"><h3 style="margin-top:0">Weekly digest for ${p}</h3>${mine.map(t=>`<div class="row"><div class="grow">${esc(t.t)}</div><span class="tag w">${esc(t.due)}</span></div>`).join("")||'<div class="empty">No open tasks.</div>'}${dm.map(m=>`<div class="row mu">${L[lang].dec}: ${esc(m.t)}</div>`).join("")}<div class="bar"><button class="ib" data-do="listenDg">Listen</button><button class="ib pri" data-do="sendDg">Send digest</button></div></div><div class="card"><h3 style="margin-top:0">Workload this week</h3>${ppl.map(x=>{const n=S.tasks.filter(t=>t.o===x&&t.s==="open").length;return`<div class="row" style="align-items:center">${av(x)}<span style="width:52px">${x}</span><div class="meter"><i style="width:${n/mx*100}%"></i></div><span>${n}</span></div>`}).join("")}</div></div>`},
+br(){const tp=["database","launch","pricing"],t=S.bt,ch=S.mem.filter(m=>m.tp===t),ts=S.tasks.filter(x=>x.t.toLowerCase().includes(t.replace("database","database"))&&x.s==="open");
+ return`<div class="bar" style="margin:0 0 12px"><span class="mu">Topic for your next meeting:</span>${tp.map(x=>`<button class="ib ${x===t?"pri":""}" data-bt="${x}">${x}</button>`).join("")}</div><div class="card"><h3 style="margin-top:0">Briefing: ${t}</h3><b>What was decided</b>${ch.map(m=>`<div class="row ${m.sup?"sup":""}"><div class="grow">${esc(m.t)}<div class="mu">${m.m}, ${m.d}</div></div>${m.sup?'<span class="tag n">Superseded</span>':'<span class="tag">Current</span>'}</div>`).join("")}<b>Open tasks</b>${ts.map(x=>`<div class="row">${esc(x.t)} · ${x.o}</div>`).join("")||'<div class="mu">None.</div>'}<b>Unresolved conflicts</b>${S.cf.filter(c=>c.tp===t&&!c.res).map(c=>`<div class="row"><span class="tag d">Conflict</span> ${esc(c.why)}</div>`).join("")||'<div class="mu">None.</div>'}</div>`}};
+function result(){const l=L[lang],d=S.items.filter(i=>i.k==="dec").length,a=S.items.length-d;
+ return`<div class="card" style="margin-top:14px"><h3 style="margin-top:0">Results <span class="tag n">pass ${att}</span></h3><div id="sumL" style="margin-bottom:6px">${l.sum(d,a,S.cf.length)}</div>${S.items.map(i=>`<div class="row"><input type="checkbox" data-ck="${i.id}" ${i.on?"checked":""} aria-label="Include"><div class="grow"><span class="tag ${i.k==="dec"?"":"w"}">${l[i.k]}</span> ${esc(i.t)}<div class="mu">${l.own}: ${esc(i.o)}${i.due?` · ${l.due}: ${esc(i.due)}`:""} · confidence ${Math.round(i.c*100)}% ${i.c<.7?'<span class="tag d">Check this</span>':""} ${i.k==="act"&&!i.due?'<span class="tag w">Needs a deadline</span>':""} <button class="ib" style="padding:0 8px" data-ev="${i.id}">Evidence</button></div>${S.ev[i.id]?`<div class="q">${esc(i.q)}</div>`:""}</div></div>`).join("")||'<div class="empty">Nothing found. Try “Name: I will … by Mar 1.”</div>'}${S.cf.filter(c=>c.sev==="hard").map(c=>`<div class="conf"><span class="tag d">Conflict</span> ${esc(c.why)}</div>`).join("")}<div class="bar"><button class="ib" data-do="again">Try again</button><button class="ib" data-do="improve">Improve with AI</button><button class="ib" data-do="listenRes">Listen to results</button><span style="flex:1"></span><button class="ib pri" data-do="confirm" ${S.items.some(i=>i.on)?"":"disabled"}>Review and post</button></div></div>`}
+function fillDec(f){$("#dl").innerHTML=S.mem.filter(m=>(m.t+m.tp).toLowerCase().includes(f.toLowerCase())).map(m=>`<div class="row"><div class="grow ${m.sup?"sup":""}">${esc(m.t)}<div class="mu">${m.m}, ${m.d}${m.stale?' · <span class="tag w">No activity in 90 days</span>':""}</div>${S.ev["m"+m.id]?`<div class="q">${esc(m.q)}</div>`:""}</div>${m.sup?'<span class="tag n">Superseded</span>':""}<button class="ib" data-ev="m${m.id}">Why?</button></div>`).join("")||'<div class="empty">No decisions match.</div>'}
+function render(){const l=L[lang];$("#tabs").innerHTML=TABS.map(t=>`<button role="tab" class="${t===tab?"on":""}" data-t="${t}">${l[t]}${t==="co"&&open()?`<b>${open()}</b>`:""}</button>`).join("");$("#ws").innerHTML=B[tab]();if(tab==="de")fillDec("");const n=S.notes.filter(x=>!x.r).length;$("#bellN").textContent=n;$("#bellN").style.display=n?"":"none"}
+function pal(){$("#modal").innerHTML='<input type="text" id="pq" placeholder="Type a command…" autofocus><div id="pl"></div>';$("#scrim").classList.add("on");pl("");setTimeout(()=>$("#pq").focus(),30)}
+const CMD=[["Run the sample meeting","tryNew"],["Open the workspace","ws"],["Go to Conflicts","co"],["Ask AI","ask"],["View history","hist"],["Toggle dark mode","th"],["Copy meeting minutes","minutes"]];
+function pl(f){$("#pl").innerHTML=CMD.filter(c=>c[0].toLowerCase().includes(f.toLowerCase())).map(c=>`<button class="ib" style="width:100%;margin-top:6px" data-cmd="${c[1]}">${c[0]}</button>`).join("")}
+function cmd(k){$("#scrim").classList.remove("on");({tryNew:()=>act("tryNew"),ws:()=>location.hash="workspace",co:()=>{tab="co";render();location.hash="workspace"},ask:()=>$("#ask").classList.add("on"),hist:()=>$("#bHist").click(),th:()=>setTheme(theme==="dark"?"light":"dark"),minutes:minutes})[k]()}
+function act(d){switch(d){case"sample":S.tx=SAMPLE;$("#tx").value=SAMPLE;S.pr.sample=1;toast("Sample loaded");break;case"run":run(1);break;case"tryNew":S.tx=SAMPLE;S.pr.sample=1;tab="tr";render();run(1);location.hash="workspace";break;case"again":run(att+1);break;case"improve":improve();break;case"confirm":confirm();break;case"close":$("#scrim").classList.remove("on");break;case"post":post();break;case"minutes":minutes();break;
+ case"listenRes":speak($("#sumL").textContent+" "+S.items.map(i=>`${L[lang][i.k]}: ${i.t}. ${i.o}`).join(". "));break;case"listenDg":speak($("#dgc").innerText);break;case"sendDg":log("Digest sent to "+S.dg);toast("Digest sent to "+S.dg)}}
+document.addEventListener("click",e=>{const t=e.target.closest("button,input[data-ck]");if(!t){$("#pop").classList.remove("on");return}const d=t.dataset,id=t.id;
+ if(d.t){tab=d.t;return render()}
+ if(d.st){const s=d.st;if(s==="sample"){S.tx=SAMPLE;S.pr.sample=1;tab="tr";render()}else if(s==="ext"){tab="tr";render();run(1)}else if(s==="res"){tab="co";render()}else confirm();return}
+ if(d.tog!==undefined){const k=S.tasks[d.tog];k.s=k.s==="done"?"open":"done";log(`${k.s==="done"?"Completed":"Reopened"}: ${k.t}`);return render()}
+ if(d.rem!==undefined){const k=S.tasks[d.rem];S.notes.unshift({t:`Reminder set for “${k.t}” (1 day before ${k.due})`,r:0});log("Reminder set: "+k.t);render();return toast("Reminder set for 1 day before the deadline")}
+ if(d.cr){const[i,w]=d.cr.split("|"),c=S.cf[i];c.res=w==="new"?"kept new":"kept earlier";if(w==="old"){const it=S.items.find(x=>x.id===c.id);if(it)it.on=0}if(!open())S.pr.res=1;log(`Resolved ${c.tp} conflict: ${c.res}`);return render()}
+ if(d.dg){S.dg=d.dg;return render()}if(d.bt){S.bt=d.bt;return render()}
+ if(d.ev!==undefined){S.ev[d.ev]=!S.ev[d.ev];if(tab==="de")return fillDec($("#fd").value);return render()}
+ if(d.ck!==undefined){S.items[d.ck].on=t.checked?1:0;return render()}
+ if(d.cmd)return cmd(d.cmd);
+ if(d.do)act(d.do);
+ if(id==="tMic")mic(x=>{const a=$("#tx");a.value+=(a.value?"\n":"")+x;S.tx=a.value},t);
+ if(id==="qMic")mic(x=>{$("#q").value=x;ask(x)},t);if(id==="qGo")ask($("#q").value);
+ if(id==="bAsk")$("#ask").classList.add("on");if(id==="askX")$("#ask").classList.remove("on");
+ if(id==="bHist"){$("#histL").innerHTML=S.hist.map(h=>`<div class="m a"><b>${h.w}</b><br>${esc(h.t)}</div>`).join("");$("#hist").classList.add("on")}if(id==="histX")$("#hist").classList.remove("on");
+ if(id==="bTheme")setTheme(theme==="dark"?"light":"dark");if(id==="bK")pal();
+ if(id==="bMenu")$("#links").classList.toggle("open");
+ if(id==="bListen")speak($("#ws").innerText);
+ if(id==="bBell"){e.stopPropagation();$("#pop").innerHTML="<b>Notifications</b>"+(S.notes.map(n=>`<div class="row" style="${n.r?"opacity:.5":""}">${esc(n.t)}</div>`).join("")||'<div class="empty">All caught up.</div>')+'<div class="bar"><button class="ib" id="mark">Mark all read</button></div>';$("#pop").classList.toggle("on")}
+ if(id==="mark"){S.notes.forEach(n=>n.r=1);render();$("#pop").classList.remove("on")}});
+document.addEventListener("input",e=>{const t=e.target;if(t.id==="fd")fillDec(t.value);if(t.id==="tx")S.tx=t.value;if(t.id==="pq")pl(t.value);if(t.dataset.eo!==undefined)S.items[t.dataset.eo].o=t.value;if(t.dataset.ed!==undefined)S.items[t.dataset.ed].due=t.value});
+document.addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.id==="q")ask(e.target.value);if(e.key==="Enter"&&e.target.id==="pq"){const b=$("#pl button");if(b)cmd(b.dataset.cmd)}if((e.ctrlKey||e.metaKey)&&e.key==="k"){e.preventDefault();pal()}if(e.key==="Escape")$("#scrim").classList.remove("on")});
+$("#links").addEventListener("click",()=>$("#links").classList.remove("open"));
+$("#lang").addEventListener("change",e=>{lang=e.target.value;render();toast("Workspace labels translated")});
+let sv=null;try{sv=localStorage.getItem("th")}catch(e){}setTheme(sv||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light"));
+$("#msgs").innerHTML='<div class="m a">Hi! Ask me anything about your past meetings.</div>';render();
+</script>
+</body>
+</html>
