@@ -1,0 +1,7 @@
+Priya: Welcome team to our Week 3 sync. We need to finalize vendor contracts.
+Ravi: I reviewed the fee structure and international conversion. Let's switch to PayPal instead of Stripe for payments.
+Priya: Okay, let's switch to PayPal for all payment processing to save on international cross-border fees.
+Arjun: I will build the PayPal SDK gateway connector by March 12.
+Sana: Someone should review our legal compliance terms for European users before launch.
+Arjun: I will implement the feature flags for closed beta access by Mar 5.
+Maya: I will update the checkout screen icons and branding by March 8.
