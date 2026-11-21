@@ -1,0 +1,7 @@
+Priya: Team, after reviewing the security audit results, we need more testing runway.
+Sana: Customers are asking for an early preview before full GA.
+Priya: We decided to move the launch date to April 1 and introduce a 2-week closed beta.
+Arjun: Understood. That gives us buffer for load testing.
+Sana: I will draft the beta invite program criteria by Feb 28.
+Arjun: I will implement the feature flags for closed beta access by Mar 5.
+Ravi: Someone should check the AWS egress cost estimates for beta.
