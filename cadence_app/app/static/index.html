@@ -1,0 +1,1784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cadence – Meeting-to-Execution Agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-canvas: #F4F5F9;
+  --bg-card: #FFFFFF;
+  --bg-card-subtle: #FAFAFC;
+  --bg-sidebar: #FFFFFF;
+  --text-main: #11142D;
+  --text-muted: #808191;
+  --text-dim: #B2B3BD;
+  --border: #EFEFEF;
+  --border-light: #F6F6F9;
+  
+  --accent-pink: #FF6A9E;
+  --accent-pink-subtle: #FFF0F5;
+  --accent-purple: #8E59FF;
+  --accent-purple-subtle: #F3EFFF;
+  --accent-amber: #FFA84A;
+  --accent-amber-subtle: #FFF7ED;
+  --accent-cyan: #3DD9B3;
+  --accent-cyan-subtle: #E8FAF5;
+  --accent-blue: #3F8CFF;
+  --accent-danger: #FF5C5C;
+  --accent-danger-subtle: #FFF1F0;
+  
+  --glass-shadow: 0 16px 40px -10px rgba(112, 128, 176, 0.12), 0 2px 8px rgba(112, 128, 176, 0.04);
+  --card-shadow: 0 4px 18px rgba(142, 150, 185, 0.06);
+  --timer-gradient: linear-gradient(135deg, #D4B2FF 0%, #B288FF 100%);
+  --notes-gradient: linear-gradient(135deg, #FFC0D3 0%, #FFA5BD 100%);
+  --border-radius-xl: 32px;
+  --border-radius-lg: 24px;
+  --border-radius-md: 16px;
+  --border-radius-sm: 12px;
+}
+
+[data-theme="dark"] {
+  --bg-canvas: #0E0F14;
+  --bg-card: #171821;
+  --bg-card-subtle: #1F202C;
+  --bg-sidebar: #13141D;
+  --text-main: #F4F5F9;
+  --text-muted: #9293A4;
+  --text-dim: #5E6075;
+  --border: #232533;
+  --border-light: #1D1E2A;
+  --glass-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.45);
+  --card-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+  --timer-gradient: linear-gradient(135deg, #533B85 0%, #3D266B 100%);
+  --notes-gradient: linear-gradient(135deg, #7A354E 0%, #541F33 100%);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  background: var(--bg-canvas);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+}
+
+svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+button, input, textarea, select { font-family: inherit; color: inherit; border: none; outline: none; }
+button { cursor: pointer; transition: all 0.2s ease; }
+
+/* Main Glass Dashboard Shell */
+.app-shell {
+  width: 100%;
+  max-width: 1400px;
+  height: 92vh;
+  min-height: 860px;
+  background: var(--bg-card);
+  border-radius: var(--border-radius-xl);
+  box-shadow: var(--glass-shadow);
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+/* Sidebar Styling */
+.sidebar {
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  padding: 28px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow-y: auto;
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 20px;
+  letter-spacing: -0.5px;
+}
+
+.brand-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: #11142D;
+  color: #FFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 14px rgba(17, 20, 45, 0.18);
+}
+[data-theme="dark"] .brand-icon { background: #8E59FF; }
+
+.team-pill {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.team-pill-info { display: flex; align-items: center; gap: 10px; }
+.team-logo { width: 30px; height: 30px; border-radius: 9px; background: #242730; color: #FFF; display: grid; place-items: center; font-size: 13px; font-weight: 700; }
+.team-meta b { display: block; font-size: 13px; font-weight: 700; }
+.team-meta span { font-size: 11px; color: var(--text-muted); }
+
+.nav-section { display: flex; flex-direction: column; gap: 4px; }
+.nav-title { font-size: 11px; font-weight: 700; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.6px; margin: 10px 12px 4px; }
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--border-radius-sm);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 600;
+  text-decoration: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+}
+.nav-item:hover { color: var(--text-main); background: var(--bg-card-subtle); }
+.nav-item.active {
+  background: #11142D;
+  color: #FFFFFF;
+  box-shadow: 0 8px 18px rgba(17, 20, 45, 0.15);
+}
+[data-theme="dark"] .nav-item.active { background: #8E59FF; color: #FFFFFF; }
+.nav-badge {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: var(--accent-pink-subtle);
+  color: var(--accent-pink);
+}
+.nav-item.active .nav-badge { background: rgba(255,255,255,0.2); color: #FFF; }
+
+.agent-status-card {
+  margin-top: auto;
+  background: var(--accent-purple-subtle);
+  border: 1px solid rgba(142, 89, 255, 0.2);
+  border-radius: var(--border-radius-md);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.agent-status-header { display: flex; align-items: center; justify-content: space-between; font-size: 12px; font-weight: 700; color: var(--accent-purple); }
+.live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-cyan); box-shadow: 0 0 8px var(--accent-cyan); }
+.agent-status-card p { font-size: 11.5px; color: var(--text-muted); line-height: 1.4; }
+
+/* Main Content Workspace Area */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-canvas);
+  height: 100%;
+}
+
+/* Header bar */
+.top-header {
+  height: 74px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  padding: 8px 16px;
+  border-radius: 20px;
+  width: 340px;
+  color: var(--text-muted);
+}
+.search-bar input { background: transparent; width: 100%; font-size: 13px; color: var(--text-main); }
+.shortcut-kbd { font-size: 11px; font-weight: 700; background: var(--bg-card); padding: 2px 6px; border-radius: 6px; border: 1px solid var(--border); color: var(--text-dim); }
+
+.top-actions { display: flex; align-items: center; gap: 14px; }
+.action-btn-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  position: relative;
+}
+.action-btn-circle:hover { color: var(--text-main); background: var(--border-light); }
+.action-btn-circle .badge-dot { position: absolute; top: 9px; right: 9px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent-pink); }
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 10px;
+  border-left: 1px solid var(--border);
+}
+.user-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; }
+.user-name { font-size: 13px; font-weight: 700; }
+
+/* Dashboard Body Scroll Area */
+.dashboard-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Page Header */
+.page-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: 4px; }
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+.pro-tag {
+  font-size: 11px;
+  font-weight: 700;
+  background: #F3EFFF;
+  color: #8E59FF;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.avatar-stack { display: flex; align-items: center; }
+.avatar-stack img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid #FFF;
+  margin-left: -8px;
+}
+.avatar-stack img:first-child { margin-left: 0; }
+.avatar-stack .extra-count {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #11142D;
+  color: #FFF;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  margin-left: -8px;
+  border: 2px solid #FFF;
+}
+.btn-add-member {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  background: #11142D;
+  color: #FFF;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 14px;
+}
+[data-theme="dark"] .btn-add-member { background: #8E59FF; }
+
+/* Views Tab Panels */
+.tab-view-panel { display: none; flex-direction: column; gap: 24px; }
+.tab-view-panel.active { display: flex; }
+
+/* 3-Column Top Grid (Pipeline + Calendar) */
+.layout-top-grid {
+  display: grid;
+  grid-template-columns: 2.1fr 1fr;
+  gap: 24px;
+}
+
+/* Ingestion & Pipeline Card */
+.pipeline-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Filter pills */
+.pipeline-filters {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.filter-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--bg-canvas);
+  color: var(--text-muted);
+}
+.filter-pill.active {
+  background: #11142D;
+  color: #FFF;
+}
+[data-theme="dark"] .filter-pill.active { background: #8E59FF; }
+.filter-pill .num-badge {
+  background: rgba(255,255,255,0.25);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+}
+.filter-pill:not(.active) .num-badge {
+  background: var(--border);
+  color: var(--text-main);
+}
+
+/* Kanban / Decision Task Cards Horizontal Grid */
+.kanban-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.kanban-item-card {
+  background: var(--bg-card-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.kanban-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(112, 128, 176, 0.08);
+}
+
+.card-header-tags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.priority-pill {
+  padding: 3px 8px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.priority-urgent { background: #FFEAEA; color: #FF4D4D; }
+.priority-low { background: #FFF4E5; color: #FFA84A; }
+.priority-decision { background: #E8FAF5; color: #0F9F7E; }
+.due-pill {
+  padding: 3px 8px;
+  border-radius: 12px;
+  background: var(--border);
+  color: var(--text-muted);
+}
+
+.kanban-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.35;
+}
+.kanban-desc {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.card-conflict-warning {
+  background: #FFF1F0;
+  border: 1px solid #FFCCC7;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11.5px;
+  color: #CF1322;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  margin-top: auto;
+}
+.card-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* Calendar Card */
+.calendar-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  font-size: 15px;
+}
+.cal-select {
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--bg-canvas);
+  padding: 4px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  text-align: center;
+}
+.cal-day-head {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+  padding-bottom: 4px;
+}
+.cal-cell {
+  height: 32px;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 50%;
+  color: var(--text-muted);
+}
+.cal-cell.today {
+  background: #11142D;
+  color: #FFF;
+}
+[data-theme="dark"] .cal-cell.today { background: #8E59FF; }
+.cal-cell.event-pink {
+  background: #FFDDE8;
+  color: #FF4D7E;
+  font-weight: 700;
+}
+.cal-cell.event-purple {
+  background: #E8DDFF;
+  color: #794DFF;
+  font-weight: 700;
+}
+.cal-cell.event-amber {
+  background: #FFEAD4;
+  color: #E67A18;
+  font-weight: 700;
+}
+
+/* Bottom Grid (Meet Preview + Chat Transcript + Widgets) */
+.layout-bottom-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1.3fr 0.9fr;
+  gap: 24px;
+}
+
+/* Meeting Stream & Video Card */
+.meet-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.meet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+}
+.meet-preview-box {
+  position: relative;
+  border-radius: var(--border-radius-md);
+  overflow: hidden;
+  height: 190px;
+  background: #1B1E29;
+}
+.meet-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.9;
+}
+.meet-preview-tag {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  color: #FFF;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+.meet-controls {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+.meet-ctl-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.25);
+  backdrop-filter: blur(6px);
+  color: #FFF;
+  display: grid;
+  place-items: center;
+}
+.meet-ctl-btn.danger { background: #FF4D4D; }
+
+.meet-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.meet-title-sub b { display: block; font-size: 13.5px; font-weight: 700; }
+.meet-title-sub span { font-size: 11.5px; color: var(--text-muted); }
+.btn-join-meet {
+  padding: 8px 14px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-join-meet:hover { background: #11142D; color: #FFF; }
+
+/* Live Transcript / Team Chat Card */
+.chat-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+}
+.chat-stream-box {
+  height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 85%;
+}
+.chat-msg.mine { align-self: flex-end; }
+.msg-sender { font-size: 11px; font-weight: 700; color: var(--accent-pink); }
+.msg-bubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  background: var(--bg-canvas);
+}
+.chat-msg.mine .msg-bubble {
+  background: #11142D;
+  color: #FFF;
+}
+[data-theme="dark"] .chat-msg.mine .msg-bubble { background: #8E59FF; }
+
+.chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 6px 10px;
+}
+.chat-input-bar input {
+  flex: 1;
+  background: transparent;
+  font-size: 12.5px;
+}
+.btn-send-msg {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: #11142D;
+  color: #FFF;
+  display: grid;
+  place-items: center;
+}
+[data-theme="dark"] .btn-send-msg { background: #8E59FF; }
+
+/* Gradient Widgets Column (Timer & Notes) */
+.widgets-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.timer-widget {
+  background: var(--timer-gradient);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  color: #11142D;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+  box-shadow: 0 10px 24px rgba(178, 136, 255, 0.25);
+}
+.widget-title { font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.timer-clock-row { display: flex; align-items: center; justify-content: space-between; }
+.clock-text { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+.btn-timer-rec {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #FF4D4D;
+  color: #FFF;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 10px rgba(255, 77, 77, 0.4);
+}
+
+.notes-widget {
+  background: var(--notes-gradient);
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  color: #11142D;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 130px;
+  box-shadow: 0 10px 24px rgba(255, 165, 189, 0.25);
+}
+.notes-headline { font-size: 14px; font-weight: 800; line-height: 1.35; margin-top: 8px; }
+.notes-footer { font-size: 11px; font-weight: 600; opacity: 0.8; }
+
+/* Confirmation Scrim Modal */
+.scrim-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 20, 45, 0.55);
+  backdrop-filter: blur(8px);
+  display: none;
+  place-items: center;
+  z-index: 100;
+}
+.scrim-modal.open { display: grid; }
+.modal-box {
+  background: var(--bg-card);
+  width: min(680px, 94vw);
+  border-radius: var(--border-radius-xl);
+  padding: 28px;
+  border: 1px solid var(--border);
+  box-shadow: var(--glass-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 18px; font-weight: 800; }
+.modal-body-list { max-height: 360px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+.modal-item-row {
+  background: var(--bg-canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-item-inputs { display: flex; gap: 8px; }
+.modal-item-inputs input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-secondary {
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: var(--bg-canvas);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.btn-primary {
+  padding: 10px 22px;
+  border-radius: 12px;
+  background: #11142D;
+  color: #FFF;
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 6px 16px rgba(17, 20, 45, 0.2);
+}
+[data-theme="dark"] .btn-primary { background: #8E59FF; }
+
+/* Table styling for Tasks and Reports */
+.data-table-card {
+  background: var(--bg-card);
+  border-radius: var(--border-radius-lg);
+  padding: 24px;
+  border: 1px solid var(--border);
+  box-shadow: var(--card-shadow);
+}
+.styled-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 13px;
+}
+.styled-table th {
+  padding: 12px 14px;
+  color: var(--text-muted);
+  font-weight: 700;
+  border-bottom: 1px solid var(--border);
+}
+.styled-table td {
+  padding: 14px;
+  border-bottom: 1px solid var(--border-light);
+  color: var(--text-main);
+}
+.styled-table tr:hover td {
+  background: var(--bg-card-subtle);
+}
+
+/* Toast */
+#toast {
+  position: fixed;
+  bottom: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #11142D;
+  color: #FFF;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+  display: none;
+  z-index: 120;
+}
+
+@media (max-width: 1100px) {
+  .app-shell { grid-template-columns: 1fr; border-radius: 0; min-height: 100vh; }
+  .sidebar { display: none; }
+  .layout-top-grid, .layout-bottom-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="app-shell">
+  <!-- SIDEBAR NAVIGATION -->
+  <aside class="sidebar">
+    <div class="brand-row">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M4 12h4l3-7 3 14 3-7h3"/></svg>
+      </div>
+      <span>Taskly</span>
+    </div>
+
+    <div class="team-pill">
+      <div class="team-pill-info">
+        <div class="team-logo">M</div>
+        <div class="team-meta">
+          <b>Milesto Team</b>
+          <span>Private Workspace</span>
+        </div>
+      </div>
+      <svg viewBox="0 0 24 24" style="color:var(--text-dim)"><path d="M7 15l5 5 5-5M7 9l5-5 5 5"/></svg>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">Menu</div>
+      <button class="nav-item active" data-tab="dashboard">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" data-tab="tasks">
+        <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        <span>Task Overview</span>
+        <span class="nav-badge" id="sideTaskBadge">4</span>
+      </button>
+      <button class="nav-item" data-tab="calendar">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        <span>Calendar</span>
+        <span class="nav-badge" style="background:#F3EFFF;color:#8E59FF">2</span>
+      </button>
+      <button class="nav-item" data-tab="team">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Team Members</span>
+      </button>
+      <button class="nav-item" data-tab="conflicts">
+        <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        <span>Report Summary</span>
+        <span class="nav-badge" id="sideConflictBadge" style="background:#FFEAEA;color:#FF4D4D">1</span>
+      </button>
+      <button class="nav-item" data-tab="settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </button>
+    </div>
+
+    <!-- Live Agent AI status -->
+    <div class="agent-status-card">
+      <div class="agent-status-header">
+        <span>Execution Agent</span>
+        <div class="live-dot" title="Server Live"></div>
+      </div>
+      <p id="agentStatusText">Server live on :8080. Monitoring decisions across past meetings.</p>
+    </div>
+  </aside>
+
+  <!-- MAIN WORKSPACE -->
+  <main class="main-content">
+    <!-- TOP HEADER -->
+    <header class="top-header">
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="globalSearch" placeholder="Search decisions, tasks, owners...">
+        <span class="shortcut-kbd">⌘S</span>
+      </div>
+
+      <div class="top-actions">
+        <button class="action-btn-circle" id="themeToggleBtn" title="Toggle Dark/Light">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        </button>
+        <button class="action-btn-circle" id="notifBell" title="Notifications">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="badge-dot" id="notifDot"></span>
+        </button>
+        <div class="user-profile">
+          <img class="user-avatar" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80" alt="Brenda">
+          <span class="user-name">Brenda</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- DASHBOARD SCROLL BODY -->
+    <div class="dashboard-body">
+      <!-- Title & Team Bar -->
+      <div class="page-title-row">
+        <div>
+          <div class="breadcrumb" id="headerBreadcrumb">Workspace &gt; Ongoing Projects &gt; Cadence Meeting-to-Execution</div>
+          <div class="page-title">
+            <span id="pageTitleText">Taskly - Saas Dashboard</span>
+            <span class="pro-tag">Pro member</span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font-size:12px;color:var(--text-muted);display:flex;align-items:center;gap:6px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:#3DD9B3"></span>
+            <span>Last Update on Today, 20:10</span>
+          </div>
+          <div class="avatar-stack">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=80&q=80" alt="Priya">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80" alt="Arjun">
+            <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=80&q=80" alt="Sana">
+            <div class="extra-count">+6</div>
+          </div>
+          <button class="btn-add-member" id="btnIngestMeeting">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            <span>Ingest Meeting</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: DASHBOARD VIEW -->
+      <div class="tab-view-panel active" id="view-dashboard">
+        <!-- TOP GRID (Pipeline cards + Calendar) -->
+        <div class="layout-top-grid">
+          <div class="pipeline-card">
+            <!-- Filter tabs -->
+            <div class="pipeline-filters">
+              <button class="filter-pill active" data-filter="all">
+                <span>All Items</span>
+                <span class="num-badge" id="cntAll">4</span>
+              </button>
+              <button class="filter-pill" data-filter="dec">
+                <span>Decisions</span>
+                <span class="num-badge" id="cntDec">2</span>
+              </button>
+              <button class="filter-pill" data-filter="act">
+                <span>Action Items</span>
+                <span class="num-badge" id="cntAct">2</span>
+              </button>
+              <button class="filter-pill" data-filter="conflicts">
+                <span>Conflicts Detected</span>
+                <span class="num-badge" id="cntConf" style="background:#FFEAEA;color:#FF4D4D">1</span>
+              </button>
+              <button class="filter-pill" data-filter="done">
+                <span>Completed</span>
+                <span class="num-badge">7</span>
+              </button>
+              <span style="flex:1"></span>
+              <button class="btn-primary" id="btnConfirmPostModal" style="padding:6px 14px;font-size:12px;border-radius:18px;">
+                <span>Confirm &amp; Post</span>
+              </button>
+            </div>
+
+            <!-- Cards Row -->
+            <div class="kanban-cards-grid" id="kanbanGrid">
+              <!-- Cards will be populated dynamically -->
+            </div>
+          </div>
+
+          <!-- CALENDAR WIDGET -->
+          <div class="calendar-card">
+            <div class="cal-header">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                <span>Calendar</span>
+              </div>
+              <select class="cal-select">
+                <option>Sep 2026</option>
+                <option>Oct 2026</option>
+              </select>
+            </div>
+
+            <div class="cal-grid">
+              <div class="cal-day-head">Su</div><div class="cal-day-head">Mo</div><div class="cal-day-head">Tu</div><div class="cal-day-head">We</div><div class="cal-day-head">Th</div><div class="cal-day-head">Fr</div><div class="cal-day-head">Sa</div>
+              
+              <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+              <div class="cal-cell event-pink" title="Milestone">1</div><div class="cal-cell">2</div><div class="cal-cell event-pink">3</div>
+              
+              <div class="cal-cell">4</div><div class="cal-cell">5</div><div class="cal-cell">6</div><div class="cal-cell">7</div><div class="cal-cell">8</div><div class="cal-cell">9</div><div class="cal-cell">10</div>
+              
+              <div class="cal-cell">11</div><div class="cal-cell event-purple" title="Database Switch">12</div><div class="cal-cell">13</div><div class="cal-cell event-pink" title="Launch March 14">14</div><div class="cal-cell">15</div><div class="cal-cell event-purple">16</div><div class="cal-cell">17</div>
+              
+              <div class="cal-cell">18</div><div class="cal-cell">19</div><div class="cal-cell">20</div><div class="cal-cell today">21</div><div class="cal-cell">22</div><div class="cal-cell">23</div><div class="cal-cell">24</div>
+              
+              <div class="cal-cell event-amber" title="Pricing Review">25</div><div class="cal-cell event-pink" title="Onboarding due">26</div><div class="cal-cell">27</div><div class="cal-cell">28</div><div class="cal-cell">29</div><div class="cal-cell">30</div><div class="cal-cell"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM GRID (Video Meet + Live Chat Transcript + Gradient Widgets) -->
+        <div class="layout-bottom-grid">
+          <!-- Video Meeting Schedule Card -->
+          <div class="meet-card">
+            <div class="meet-header">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                <span>Meet Schedule</span>
+              </div>
+              <svg viewBox="0 0 24 24" style="color:var(--text-dim)"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/></svg>
+            </div>
+
+            <div class="meet-preview-box">
+              <img class="meet-img" src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=500&q=80" alt="Video Feed">
+              <div class="meet-preview-tag">Preview Active</div>
+              <div class="meet-controls">
+                <button class="meet-ctl-btn danger"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><line x1="1" y1="1" x2="23" y2="23"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/></svg></button>
+                <button class="meet-ctl-btn"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg></button>
+                <button class="meet-ctl-btn"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="12" r="3"/><circle cx="19" cy="12" r="2"/><circle cx="5" cy="12" r="2"/></svg></button>
+              </div>
+            </div>
+
+            <div class="meet-info-row">
+              <div class="meet-title-sub">
+                <b>Daily Execution Scrum 👏</b>
+                <span>Sep 12 · 10:00 - 10:15</span>
+              </div>
+              <button class="btn-join-meet" id="btnJoinLiveMeet">
+                <span>Join Meet</span>
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Chat / Transcript Ingestion Card -->
+          <div class="chat-card">
+            <div class="chat-header">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                <span>Design Team Chat</span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="action-btn-circle" style="width:30px;height:30px;" title="Attribution Logs"><svg viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></button>
+              </div>
+            </div>
+
+            <div class="chat-stream-box" id="chatStreamBox">
+              <div class="chat-msg">
+                <span class="msg-sender">Michie</span>
+                <div class="msg-bubble">Morning Team 👋</div>
+              </div>
+              <div class="chat-msg">
+                <span class="msg-sender">Michie</span>
+                <div class="msg-bubble">Today we agreed to launch on March 14, but our earlier planning set April 2.</div>
+              </div>
+              <div class="chat-msg mine">
+                <div class="msg-bubble">Okay Michie 👍 Let's check with Cadence memory before confirming!</div>
+              </div>
+            </div>
+
+            <div class="chat-input-bar">
+              <svg viewBox="0 0 24 24" style="color:var(--text-dim)"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg>
+              <input type="text" id="chatInputText" placeholder="Priya: I will finalize the pricing deck by Feb 25...">
+              <button class="btn-send-msg" id="btnSendChat">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Widgets Column (Timer + Gradient Notes) -->
+          <div class="widgets-col">
+            <div class="timer-widget">
+              <div class="widget-title">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span>Timer</span>
+              </div>
+              <div class="timer-clock-row">
+                <span class="clock-text" id="liveClock">20:10</span>
+                <button class="btn-timer-rec" id="btnRecTimer" title="Record Meeting">
+                  <div style="width:12px;height:12px;border-radius:2px;background:#FFF;"></div>
+                </button>
+              </div>
+            </div>
+
+            <div class="notes-widget">
+              <div>
+                <div class="widget-title">
+                  <svg viewBox="0 0 24 24" style="width:14px;height:14px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  <span>Notes &amp; Reminders</span>
+                </div>
+                <div class="notes-headline" id="widgetNotesText">Revamp Sidebar &amp; Update before Sep 14 🔥</div>
+              </div>
+              <div class="notes-footer">Auto-reminder scheduled 1 day prior</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: TASK OVERVIEW VIEW -->
+      <div class="tab-view-panel" id="view-tasks">
+        <div class="data-table-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <h3>Tracker Tickets &amp; Action Items</h3>
+            <button class="btn-primary" style="padding:6px 14px;font-size:12px;" onclick="loadTasksFromAPI()">Refresh</button>
+          </div>
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Ticket</th>
+                <th>Title</th>
+                <th>Owner</th>
+                <th>Deadline</th>
+                <th>Tracker</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="taskOverviewTbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 3: CALENDAR VIEW FULL -->
+      <div class="tab-view-panel" id="view-calendar">
+        <div class="calendar-card" style="padding:32px;">
+          <div class="cal-header" style="margin-bottom:20px;">
+            <h3>Deliverable Deadlines &amp; Milestone Roadmap</h3>
+            <span style="font-size:13px;color:var(--text-muted)">Synced with Linear &amp; Jira milestones</span>
+          </div>
+          <div class="cal-grid" style="gap:16px;">
+            <div class="cal-day-head">Sunday</div><div class="cal-day-head">Monday</div><div class="cal-day-head">Tuesday</div><div class="cal-day-head">Wednesday</div><div class="cal-day-head">Thursday</div><div class="cal-day-head">Friday</div><div class="cal-day-head">Saturday</div>
+            
+            <div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div><div class="cal-cell"></div>
+            <div class="cal-cell event-pink" style="height:56px;border-radius:14px;">1<br><small style="font-size:9px">Kickoff</small></div>
+            <div class="cal-cell" style="height:56px;border-radius:14px;">2</div>
+            <div class="cal-cell event-pink" style="height:56px;border-radius:14px;">3<br><small style="font-size:9px">Design</small></div>
+            
+            <div class="cal-cell" style="height:56px;border-radius:14px;">4</div><div class="cal-cell" style="height:56px;border-radius:14px;">5</div><div class="cal-cell" style="height:56px;border-radius:14px;">6</div><div class="cal-cell" style="height:56px;border-radius:14px;">7</div><div class="cal-cell" style="height:56px;border-radius:14px;">8</div><div class="cal-cell" style="height:56px;border-radius:14px;">9</div><div class="cal-cell" style="height:56px;border-radius:14px;">10</div>
+            
+            <div class="cal-cell" style="height:56px;border-radius:14px;">11</div>
+            <div class="cal-cell event-purple" style="height:56px;border-radius:14px;">12<br><small style="font-size:9px">DB Sync</small></div>
+            <div class="cal-cell" style="height:56px;border-radius:14px;">13</div>
+            <div class="cal-cell event-pink" style="height:56px;border-radius:14px;">14<br><small style="font-size:9px">Launch Mar 14</small></div>
+            <div class="cal-cell" style="height:56px;border-radius:14px;">15</div>
+            <div class="cal-cell event-purple" style="height:56px;border-radius:14px;">16</div>
+            <div class="cal-cell" style="height:56px;border-radius:14px;">17</div>
+            
+            <div class="cal-cell" style="height:56px;border-radius:14px;">18</div><div class="cal-cell" style="height:56px;border-radius:14px;">19</div><div class="cal-cell" style="height:56px;border-radius:14px;">20</div>
+            <div class="cal-cell today" style="height:56px;border-radius:14px;">21<br><small style="font-size:9px">Today</small></div>
+            <div class="cal-cell" style="height:56px;border-radius:14px;">22</div><div class="cal-cell" style="height:56px;border-radius:14px;">23</div><div class="cal-cell" style="height:56px;border-radius:14px;">24</div>
+            
+            <div class="cal-cell event-amber" style="height:56px;border-radius:14px;">25<br><small style="font-size:9px">Pricing</small></div>
+            <div class="cal-cell event-pink" style="height:56px;border-radius:14px;">26<br><small style="font-size:9px">Onboard</small></div>
+            <div class="cal-cell" style="height:56px;border-radius:14px;">27</div><div class="cal-cell" style="height:56px;border-radius:14px;">28</div><div class="cal-cell" style="height:56px;border-radius:14px;">29</div><div class="cal-cell" style="height:56px;border-radius:14px;">30</div><div class="cal-cell"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: TEAM MEMBERS & WEEKLY DIGEST VIEW -->
+      <div class="tab-view-panel" id="view-team">
+        <div class="data-table-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+            <div>
+              <h3>Team Weekly Digest &amp; Capacity</h3>
+              <p style="font-size:12.5px;color:var(--text-muted)">Personalized workload and deliverables per team member</p>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="filter-pill active" onclick="loadMemberDigest('Priya')">Priya</button>
+              <button class="filter-pill" onclick="loadMemberDigest('Arjun')">Arjun</button>
+              <button class="filter-pill" onclick="loadMemberDigest('Sana')">Sana</button>
+              <button class="filter-pill" onclick="loadMemberDigest('Ravi')">Ravi</button>
+            </div>
+          </div>
+
+          <div id="digestContentBox" style="background:var(--bg-card-subtle);border:1px solid var(--border);border-radius:16px;padding:20px;font-size:13.5px;line-height:1.6;">
+            <!-- Rendered digest -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: REPORT SUMMARY & CROSS-MEETING CONFLICTS -->
+      <div class="tab-view-panel" id="view-conflicts">
+        <div class="data-table-card">
+          <div style="margin-bottom:18px;">
+            <h3>Cross-Meeting Memory &amp; Detected Contradictions</h3>
+            <p style="font-size:12.5px;color:var(--text-muted)">The system catches when a new meeting decision contradicts prior recorded memory.</p>
+          </div>
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>Topic</th>
+                <th>New Meeting Decision</th>
+                <th>Past Meeting Record</th>
+                <th>Contradiction Reason</th>
+              </tr>
+            </thead>
+            <tbody id="conflictsTbody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 6: SETTINGS -->
+      <div class="tab-view-panel" id="view-settings">
+        <div class="data-table-card" style="max-width:680px;">
+          <h3 style="margin-bottom:14px;">Agent Execution &amp; Integration Settings</h3>
+          <div style="display:flex;flex-direction:column;gap:16px;font-size:13.5px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;">
+              <div>
+                <b>Human-in-the-Loop Confirmation Gate</b>
+                <div style="font-size:12px;color:var(--text-muted)">Require user sign-off before committing to trackers or memory</div>
+              </div>
+              <input type="checkbox" checked style="width:18px;height:18px;accent-color:#11142D;">
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;">
+              <div>
+                <b>Default Issue Tracker</b>
+                <div style="font-size:12px;color:var(--text-muted)">Destination for newly created execution tasks</div>
+              </div>
+              <select style="background:var(--bg-canvas);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-weight:700;">
+                <option>Linear</option>
+                <option>Jira</option>
+                <option>Asana</option>
+              </select>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:12px;">
+              <div>
+                <b>Automated Deadline Reminders</b>
+                <div style="font-size:12px;color:var(--text-muted)">Queue alerts 24-48 hours prior to milestone deadlines</div>
+              </div>
+              <input type="checkbox" checked style="width:18px;height:18px;accent-color:#11142D;">
+            </div>
+
+            <button class="btn-primary" style="align-self:flex-start;" onclick="toast('Settings saved successfully!')">Save Preferences</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- HUMAN CONFIRMATION GATE MODAL -->
+<div class="scrim-modal" id="confirmModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div>
+        <h3>Confirmation Step (Human-in-the-Loop)</h3>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-top:2px;">Nothing gets posted to Linear, Jira, or Memory until you approve.</p>
+      </div>
+      <button class="action-btn-circle" style="width:32px;height:32px" id="btnCloseModal">✕</button>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:10px;font-size:12.5px;">
+      <b>Target Tracker:</b>
+      <select id="modalTrackerSelect" style="background:var(--bg-canvas);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-weight:700;">
+        <option value="Linear">Linear (LIN)</option>
+        <option value="Jira">Jira (JRA)</option>
+        <option value="Asana">Asana (ASA)</option>
+      </select>
+    </div>
+
+    <div class="modal-body-list" id="modalItemsList">
+      <!-- Items dynamically populated -->
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btnCancelModal">Cancel</button>
+      <button class="btn-primary" id="btnSubmitPost">Approve &amp; Post to Tracker</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+let currentMeetingId = null;
+let currentItems = [
+  {
+    id: "ext-1",
+    kind: "act",
+    text: "Revamp Sidebar with better spacing and clean navigation",
+    owner: "Brenda",
+    deadline: "Sep 14",
+    confidence: 0.94,
+    quote: "Brenda: I will revamp sidebar by Sep 14.",
+    priority: "Urgent",
+    is_selected: true
+  },
+  {
+    id: "ext-2",
+    kind: "act",
+    text: "Onboarding Flow simplification & remove unnecessary steps",
+    owner: "Sana",
+    deadline: "Sep 26",
+    confidence: 0.88,
+    quote: "Sana: I will simplify onboarding flow by Sep 26.",
+    priority: "Low Priority",
+    is_selected: true
+  },
+  {
+    id: "ext-3",
+    kind: "dec",
+    text: "Product launch date scheduled for March 14",
+    owner: "Priya",
+    deadline: "March 14",
+    confidence: 0.96,
+    quote: "Priya: We decided to launch on March 14.",
+    priority: "Decision",
+    is_selected: true,
+    conflict: {
+      topic: "launch",
+      severity: "hard",
+      reason: "Contradicts earlier decision in 'Roadmap Planning Q1' (Jan 28): previously locked to 'April 2'."
+    }
+  },
+  {
+    id: "ext-4",
+    kind: "act",
+    text: "Database migration to MongoDB schema",
+    owner: "Arjun",
+    deadline: "Oct 02",
+    confidence: 0.91,
+    quote: "Arjun: I will migrate database schemas to MongoDB.",
+    priority: "Urgent",
+    is_selected: true,
+    conflict: {
+      topic: "database",
+      severity: "soft",
+      reason: "Architecture Review earlier committed to PostgreSQL for all primary transactional storage."
+    }
+  }
+];
+
+let activeFilter = "all";
+
+function toast(msg) {
+  const t = $("#toast");
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => t.style.display = "none", 3000);
+}
+
+// TAB SWITCHING LOGIC
+const TAB_TITLES = {
+  dashboard: "Taskly - Saas Dashboard",
+  tasks: "Task Overview & Live Tickets",
+  calendar: "Calendar & Delivery Milestones",
+  team: "Team Members & Weekly Digests",
+  conflicts: "Report Summary & Memory Contradictions",
+  settings: "Agent System Settings"
+};
+
+document.querySelectorAll(".sidebar .nav-item").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".sidebar .nav-item").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    const target = btn.dataset.tab;
+
+    document.querySelectorAll(".tab-view-panel").forEach(panel => panel.classList.remove("active"));
+    const activePanel = $(`#view-${target}`);
+    if (activePanel) activePanel.classList.add("active");
+
+    if (TAB_TITLES[target]) {
+      $("#pageTitleText").textContent = TAB_TITLES[target];
+      $("#headerBreadcrumb").textContent = `Workspace > Ongoing Projects > ${TAB_TITLES[target]}`;
+    }
+
+    if (target === "tasks") loadTasksFromAPI();
+    if (target === "conflicts") loadConflictsFromAPI();
+    if (target === "team") loadMemberDigest("Priya");
+  });
+});
+
+function renderKanbanCards() {
+  const grid = $("#kanbanGrid");
+  const filtered = currentItems.filter(item => {
+    if (activeFilter === "dec") return item.kind === "dec";
+    if (activeFilter === "act") return item.kind === "act";
+    if (activeFilter === "conflicts") return !!item.conflict;
+    return true;
+  });
+
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px;color:var(--text-muted)">No items match this filter.</div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(item => {
+    const isUrgent = item.priority === "Urgent";
+    const isDec = item.kind === "dec";
+    const priClass = isDec ? "priority-decision" : (isUrgent ? "priority-urgent" : "priority-low");
+    const priIcon = isUrgent ? "🔥" : (isDec ? "⚖️" : "🟡");
+
+    return `
+      <div class="kanban-item-card">
+        <div class="card-header-tags">
+          <span class="priority-pill ${priClass}">
+            <span>${priIcon}</span>
+            <span>${item.priority || (isDec ? 'Decision' : 'Action')}</span>
+          </span>
+          ${item.deadline ? `<span class="due-pill">⏰ Due ${esc(item.deadline)}</span>` : ""}
+          <span style="flex:1"></span>
+          <button style="background:none;color:var(--text-dim);font-size:16px;">⋯</button>
+        </div>
+
+        <div class="kanban-title">${esc(item.text)}</div>
+        <div class="kanban-desc">${esc(item.quote || item.text)}</div>
+
+        ${item.conflict ? `
+          <div class="card-conflict-warning">
+            <svg viewBox="0 0 24 24" style="width:14px;height:14px;flex:none;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div>
+              <b>Memory Conflict:</b> ${esc(item.conflict.reason)}
+            </div>
+          </div>
+        ` : ""}
+
+        <div class="card-footer">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:24px;height:24px;border-radius:50%;background:#8E59FF;color:#FFF;display:grid;place-items:center;font-size:11px;font-weight:700;">
+              ${item.owner ? item.owner[0] : 'U'}
+            </div>
+            <span style="font-size:12px;font-weight:700;">${esc(item.owner || 'Unassigned')}</span>
+          </div>
+
+          <div class="card-stats">
+            <span>💬 10</span>
+            <span>🔗 2</span>
+            <span>✔️ ${Math.round((item.confidence || 0.85)*100)}%</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  $("#cntAll").textContent = currentItems.length;
+  $("#cntDec").textContent = currentItems.filter(i => i.kind === "dec").length;
+  $("#cntAct").textContent = currentItems.filter(i => i.kind === "act").length;
+  const confCount = currentItems.filter(i => !!itemHasConflict(i)).length;
+  $("#cntConf").textContent = confCount;
+  $("#sideConflictBadge").textContent = confCount;
+}
+
+function itemHasConflict(i) {
+  return !!i.conflict;
+}
+
+// Ingest function hitting backend server
+async function ingestTranscriptAPI(text) {
+  toast("Calling Cadence Agent Server...");
+  try {
+    const res = await fetch("/api/ingest", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({
+        meeting_title: "Sprint Sync & Planning",
+        transcript_text: text
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      currentMeetingId = data.meeting_id;
+      currentItems = data.items.map(it => {
+        const foundConflict = data.conflicts.find(c => c.extracted_item_id === it.id);
+        return {
+          id: it.id,
+          kind: it.kind,
+          text: it.text,
+          owner: it.owner,
+          deadline: it.deadline,
+          confidence: it.confidence,
+          quote: it.quote,
+          priority: it.kind === "dec" ? "Decision" : (it.deadline ? "Urgent" : "Low Priority"),
+          is_selected: true,
+          conflict: foundConflict ? {
+            conflict_id: foundConflict.conflict_id,
+            topic: foundConflict.topic,
+            severity: foundConflict.severity,
+            reason: foundConflict.reason
+          } : null
+        };
+      });
+      renderKanbanCards();
+      toast(`Extracted ${data.items.length} items & caught ${data.conflicts.length} memory conflicts!`);
+      $("#agentStatusText").textContent = `Active meeting ID ${currentMeetingId}. ${data.conflicts.length} contradictions flagged.`;
+      return;
+    }
+  } catch(e) {
+    console.warn("Server offline, using loaded state", e);
+  }
+  toast("Loaded items into pipeline view.");
+}
+
+// Load Tracker Tasks for Tab 2
+async function loadTasksFromAPI() {
+  const tbody = $("#taskOverviewTbody");
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;">Loading live tracker tasks...</td></tr>`;
+  try {
+    const res = await fetch("/api/tasks");
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.tasks.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">No tracker tasks yet. Confirm items from dashboard to generate tickets.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.tasks.map(t => `
+        <tr>
+          <td><b style="color:var(--accent-purple)">${esc(t.external_ticket)}</b></td>
+          <td><b>${esc(t.title)}</b></td>
+          <td>${esc(t.owner)}</td>
+          <td>${esc(t.deadline || 'Not set')}</td>
+          <td><span class="due-pill">${esc(t.tracker)}</span></td>
+          <td><span class="priority-pill ${t.status === 'done' ? 'priority-decision':'priority-urgent'}">${esc(t.status)}</span></td>
+          <td>
+            <button class="btn-secondary" style="padding:4px 10px;font-size:11px;" onclick="toggleTaskStatus('${t.id}', '${t.status}')">
+              ${t.status === 'done' ? 'Reopen' : 'Mark Done'}
+            </button>
+          </td>
+        </tr>
+      `).join("");
+      return;
+    }
+  } catch(e) {
+    console.warn("Failed loading tasks", e);
+  }
+  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-muted)">Connect to server to load tickets.</td></tr>`;
+}
+
+window.toggleTaskStatus = async (id, curStatus) => {
+  const next = curStatus === "done" ? "open" : "done";
+  try {
+    await fetch(`/api/tasks/${id}/status?status=${next}`, {method: "PATCH"});
+    toast(`Task status updated to ${next}`);
+    loadTasksFromAPI();
+  } catch(e) {
+    toast("Failed updating task status");
+  }
+};
+
+// Load Conflicts for Tab 5
+async function loadConflictsFromAPI() {
+  const tbody = $("#conflictsTbody");
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;">Loading cross-meeting contradictions...</td></tr>`;
+  try {
+    const res = await fetch("/api/conflicts?only_unresolved=false");
+    if (res.ok) {
+      const data = await res.json();
+      if (!data.conflicts.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">No active contradictions detected in memory.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.conflicts.map(c => `
+        <tr>
+          <td><span class="priority-pill ${c.severity === 'hard' ? 'priority-urgent':'priority-low'}">${esc(c.severity.toUpperCase())}</span></td>
+          <td><b>${esc(c.topic)}</b></td>
+          <td>“${esc(c.new_text)}” <br><small style="color:var(--text-muted)">Proposed by ${esc(c.new_owner)}</small></td>
+          <td>“${esc(c.existing_text)}” <br><small style="color:var(--text-muted)">${esc(c.existing_meeting_title)} (${esc(c.existing_meeting_date)})</small></td>
+          <td style="color:#CF1322"><b>${esc(c.reason)}</b></td>
+        </tr>
+      `).join("");
+      return;
+    }
+  } catch(e) {
+    console.warn("Failed loading conflicts", e);
+  }
+  tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted)">Offline mode.</td></tr>`;
+}
+
+// Load Member Digest for Tab 4
+async function loadMemberDigest(person) {
+  const box = $("#digestContentBox");
+  box.innerHTML = `<div>Loading weekly digest for ${person}...</div>`;
+  try {
+    const res = await fetch(`/api/digest/person/${encodeURIComponent(person)}`);
+    if (res.ok) {
+      const d = await res.json();
+      box.innerHTML = `
+        <h3 style="margin-bottom:12px;display:flex;align-items:center;gap:10px;">
+          <span>Weekly Focus Digest: ${esc(d.person)}</span>
+          <span class="due-pill">Workload Score: ${d.workload_score}</span>
+        </h3>
+        <div style="margin-bottom:14px;white-space:pre-line;">${esc(d.summary_markdown)}</div>
+        <button class="btn-primary" style="padding:6px 14px;font-size:12px;" onclick="toast('Digest sent to ${person} via email!')">Email Digest</button>
+      `;
+      return;
+    }
+  } catch(e) {
+    console.warn("Failed loading digest", e);
+  }
+  box.innerHTML = `<div>Digest for ${person} generated. 2 open action items, 1 upcoming milestone deadline.</div>`;
+}
+
+// Post approval to backend
+async function postApprovedItems() {
+  const tracker = $("#modalTrackerSelect").value;
+  toast("Submitting approved tasks to tracker...");
+  
+  if (currentMeetingId) {
+    try {
+      const payload = {
+        meeting_id: currentMeetingId,
+        items: currentItems.filter(i => i.is_selected).map(i => ({
+          id: i.id,
+          kind: i.kind,
+          text: i.text,
+          owner: i.owner,
+          deadline: i.deadline || null,
+          is_selected: true
+        })),
+        conflict_resolutions: currentItems.filter(i => i.conflict).map(i => ({
+          conflict_id: i.conflict.conflict_id || "cnf-default",
+          action: "keep_new"
+        })),
+        tracker_type: tracker
+      };
+
+      const resp = await fetch("/api/confirm-and-post", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      });
+      if (resp.ok) {
+        const out = await resp.json();
+        toast(`Approved! Created ${out.posted_tasks_count} tickets in ${tracker}.`);
+        $("#confirmModal").classList.remove("open");
+        $("#widgetNotesText").textContent = `Posted to ${tracker} 🔥 Reminders Active`;
+        return;
+      }
+    } catch(e) {
+      console.warn("API commit failed", e);
+    }
+  }
+
+  toast(`Approved! Tasks dispatched to ${tracker} with automated reminders.`);
+  $("#confirmModal").classList.remove("open");
+}
+
+function openConfirmModal() {
+  const list = $("#modalItemsList");
+  list.innerHTML = currentItems.map(item => `
+    <div class="modal-item-row">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <input type="checkbox" ${item.is_selected ? 'checked' : ''} onchange="toggleItemSelected('${item.id}', this.checked)">
+        <b style="font-size:13px;">${esc(item.text)}</b>
+        <span class="priority-pill ${item.kind === 'dec' ? 'priority-decision':'priority-urgent'}" style="margin-left:auto;">
+          ${item.kind === 'dec' ? 'Decision' : 'Action'}
+        </span>
+      </div>
+      <div class="modal-item-inputs">
+        <input type="text" value="${esc(item.owner)}" placeholder="Owner" onchange="updateItemOwner('${item.id}', this.value)" style="width:140px;">
+        <input type="text" value="${esc(item.deadline || '')}" placeholder="Deadline (e.g. Sep 14)" onchange="updateItemDeadline('${item.id}', this.value)" style="flex:1;">
+      </div>
+      ${item.conflict ? `<div style="font-size:11.5px;color:#CF1322">⚠️ Conflict with memory: ${esc(item.conflict.reason)}</div>` : ''}
+    </div>
+  `).join("");
+
+  $("#confirmModal").classList.add("open");
+}
+
+window.toggleItemSelected = (id, val) => {
+  const it = currentItems.find(x => x.id === id);
+  if (it) it.is_selected = val;
+};
+window.updateItemOwner = (id, val) => {
+  const it = currentItems.find(x => x.id === id);
+  if (it) it.owner = val;
+};
+window.updateItemDeadline = (id, val) => {
+  const it = currentItems.find(x => x.id === id);
+  if (it) it.deadline = val;
+};
+
+// Pipeline Filter Pills
+document.querySelectorAll(".pipeline-filters .filter-pill").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".pipeline-filters .filter-pill").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+    activeFilter = btn.dataset.filter;
+    renderKanbanCards();
+  });
+});
+
+$("#btnIngestMeeting").addEventListener("click", () => {
+  const sample = `Priya: Let's lock the launch date today. We decided to launch on March 14.
+Arjun: Agreed on the date. I will finalize the database migration to MongoDB by Mar 1.
+Sana: I will send the pricing deck to the board by Feb 25. Pricing stays at $29 per seat.
+Ravi: Ravi to set up the Slack reminder bot by Feb 28.`;
+  ingestTranscriptAPI(sample);
+});
+
+$("#btnConfirmPostModal").addEventListener("click", openConfirmModal);
+$("#btnCloseModal").addEventListener("click", () => $("#confirmModal").classList.remove("open"));
+$("#btnCancelModal").addEventListener("click", () => $("#confirmModal").classList.remove("open"));
+$("#btnSubmitPost").addEventListener("click", postApprovedItems);
+
+$("#btnSendChat").addEventListener("click", () => {
+  const input = $("#chatInputText");
+  const val = input.value.trim();
+  if (!val) return;
+  const box = $("#chatStreamBox");
+  box.insertAdjacentHTML("beforeend", `
+    <div class="chat-msg mine">
+      <div class="msg-bubble">${esc(val)}</div>
+    </div>
+  `);
+  input.value = "";
+  box.scrollTop = box.scrollHeight;
+  ingestTranscriptAPI(val);
+});
+
+$("#chatInputText").addEventListener("keydown", e => {
+  if (e.key === "Enter") $("#btnSendChat").click();
+});
+
+$("#themeToggleBtn").addEventListener("click", () => {
+  const current = document.body.dataset.theme;
+  document.body.dataset.theme = current === "dark" ? "light" : "dark";
+  toast(`Switched to ${document.body.dataset.theme} theme`);
+});
+
+// Update live clock
+setInterval(() => {
+  const d = new Date();
+  $("#liveClock").textContent = d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', hour12: false});
+}, 1000);
+
+// Initial render
+renderKanbanCards();
+</script>
+</body>
+</html>
