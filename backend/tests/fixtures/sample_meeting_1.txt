@@ -1,0 +1,8 @@
+Priya: Welcome everyone. Let's lock in our payment architecture for the launch.
+Arjun: I evaluated Stripe and Braintree. Stripe gives us the fastest path to PCI compliance.
+Priya: Agreed. We decided to use Stripe for payments for the initial rollout.
+Sana: That works well for marketing too. When are we targeting launch?
+Priya: We decided to launch on March 15.
+Arjun: I will finalize the Stripe webhook integration and customer schema by Feb 20.
+Ravi: Ravi to provision the production Redis cluster and VPC peering by Feb 18.
+Maya: I will deliver the checkout UI component library by Feb 10.
