@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+
+# Database
+*.db
+*.sqlite
+*.db-shm
+*.db-wal
+
+# Node
+node_modules/
+.next/
+dist/
+build/
+
+# Env
+.env
+!.env.example
+
+# Misc
+*.log
+.DS_Store
